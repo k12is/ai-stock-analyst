@@ -8,6 +8,7 @@ def get_stock_analysis(ticker):
         stock = yf.Ticker(ticker)
         info = stock.info
         
+        # Perform quantitative & qualitative analysis
         analysis = {
             "Company Name": info.get("longName", "N/A"),
             "Symbol": ticker.upper(),
@@ -19,7 +20,9 @@ def get_stock_analysis(ticker):
             "Dividend Yield": info.get("dividendYield", "N/A"),
             "Sector": info.get("sector", "N/A"),
             "Recommendation": info.get("recommendationKey", "N/A"),
-            "Analyst Target Price": f"${info.get('targetMeanPrice', 'N/A')}"
+            "Analyst Target Price": f"${info.get('targetMeanPrice', 'N/A')}",
+            "Momentum Signal": "Bullish" if info.get('currentPrice', 0) > info.get('fiftyTwoWeekLow', 0) * 1.2 else "Neutral",
+            "Investment Insight": "Stock is in an uptrend, consider further technical analysis." if info.get('currentPrice', 0) > info.get('fiftyTwoWeekHigh', 0) * 0.8 else "Stock is near resistance, be cautious."
         }
         return analysis
     except Exception as e:
@@ -32,6 +35,7 @@ def analyze():
         return jsonify({"error": "Please provide a valid stock ticker symbol."})
     
     stock_data = get_stock_analysis(ticker)
+    stock_data["Disclaimer"] = "Invest at your own risk. This is not financial advice."  # Small professional disclaimer
     return jsonify(stock_data)
 
 if __name__ == '__main__':
