@@ -1,7 +1,9 @@
 import yfinance as yf
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for API accessibility
 
 def get_stock_analysis(ticker):
     try:
@@ -21,29 +23,30 @@ def get_stock_analysis(ticker):
             "Sector": info.get("sector", "N/A"),
             "Recommendation": info.get("recommendationKey", "N/A"),
             "Analyst Target Price": f"${info.get('targetMeanPrice', 'N/A')}",
-            "Momentum Signal": "Bullish" if info.get('currentPrice', 0) > info.get('fiftyTwoWeekLow', 0) * 1.2 else "Neutral",
-            "Investment Insight": "Stock is in an uptrend, consider further technical analysis." if info.get('currentPrice', 0) > info.get('fiftyTwoWeekHigh', 0) * 0.8 else "Stock is near resistance, be cautious."
+            "Momentum Signal": "Strong Bullish" if info.get('currentPrice', 0) > info.get('fiftyTwoWeekLow', 0) * 1.5 else "Neutral" if info.get('currentPrice', 0) > info.get('fiftyTwoWeekLow', 0) * 1.2 else "Bearish",
+            "Investment Insight": "Stock is in a strong uptrend, potential for growth." if info.get('currentPrice', 0) > info.get('fiftyTwoWeekHigh', 0) * 0.9 else "Approaching resistance, consider technical analysis."
         }
-        return analysis
+        return {"status": "success", "data": analysis}
     except Exception as e:
-        return {"error": str(e)}
+        return {"status": "error", "message": str(e)}
 
 @app.route('/')
 def home():
     return jsonify({
         "message": "Welcome to AI Stock Analyst API.",
-        "usage": "Use /analyze?ticker=STOCK_SYMBOL (e.g., /analyze?ticker=AAPL) to get stock analysis."
-    })
+        "usage": "Use /analyze?ticker=STOCK_SYMBOL (e.g., /analyze?ticker=AAPL) to get stock analysis.",
+        "status": "API is running"
+    }), 200
 
 @app.route('/analyze', methods=['GET'])
 def analyze():
     ticker = request.args.get('ticker', '').upper()
     if not ticker:
-        return jsonify({"error": "Please provide a valid stock ticker symbol."})
+        return jsonify({"status": "error", "message": "Please provide a valid stock ticker symbol."}), 400
     
     stock_data = get_stock_analysis(ticker)
     stock_data["Disclaimer"] = "Invest at your own risk. This is not financial advice."  # Small professional disclaimer
-    return jsonify(stock_data)
+    return jsonify(stock_data), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000, debug=True)
